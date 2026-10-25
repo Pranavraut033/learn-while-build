@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Learn Cards</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2.0.6/css/pico.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+<style>
+  main { max-width: 40rem; }
+  .meta { font-size: .85rem; opacity: .7; }
+  .answer { white-space: pre-wrap; }
+  .grades { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; }
+</style>
+</head>
+<body>
+<main class="container" x-data="cards()" x-init="load()">
+  <hgroup>
+    <h1>Learn cards</h1>
+    <p x-text="loading ? 'Loading…' : cards.length + ' left today'"></p>
+  </hgroup>
+
+  <p x-show="error" x-text="error" style="color: var(--pico-del-color)"></p>
+
+  <template x-if="!loading && card">
+    <article>
+      <header class="meta">
+        <strong x-text="card.name"></strong>
+        <span x-text="' · ' + card.repos.join(', ') + (card.where ? ' · ' + card.where : '')"></span>
+      </header>
+      <p x-text="card.question"></p>
+      <template x-if="shown">
+        <div>
+          <hr>
+          <p class="answer" x-text="card.answer"></p>
+        </div>
+      </template>
+      <footer>
+        <button x-show="!shown" @click="shown = true">Show answer</button>
+        <div class="grades" x-show="shown">
+          <button class="secondary" :disabled="busy" @click="grade('unclear')">Again</button>
+          <button class="contrast" :disabled="busy" @click="grade('retouch')">Hard</button>
+          <button :disabled="busy" @click="grade('clear')">Good</button>
+        </div>
+      </footer>
+    </article>
+  </template>
+
+  <article x-show="!loading && !card && !error">
+    <p>All done for today. 🎉 Next ones come back on schedule.</p>
+  </article>
+</main>
+<script>
+  function cards() {
+    return {
+      cards: [], shown: false, loading: true, busy: false, error: "",
+      get card() { return this.cards[0]; },
+      async load() {
+        try { this.cards = await (await fetch("/api/due")).json(); }
+        catch (e) { this.error = "Could not load cards. Is review.py serve running?"; }
+        this.loading = false;
+      },
+      async grade(result) {
+        this.busy = true;
+        try {
+          const r = await fetch("/api/grade", { method: "POST",
+            body: JSON.stringify({ id: this.card.id, result }) });
+          if (!r.ok) throw new Error((await r.json()).error);
+          this.cards.shift();
+          this.shown = false;
+        } catch (e) { this.error = "Save failed: " + e.message; }
+        this.busy = false;
+      },
+    };
+  }
+</script>
+</body>
+</html>

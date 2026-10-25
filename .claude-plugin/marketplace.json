@@ -1,0 +1,16 @@
+{
+  "name": "learn-while-build",
+  "description": "Learn While Build, a Claude Code plugin for learning while you vibe code",
+  "owner": {
+    "name": "Pranav Raut",
+    "url": "https://github.com/Pranavraut033"
+  },
+  "plugins": [
+    {
+      "name": "learn-while-build",
+      "source": "./",
+      "description": "Repo-specific teaching rules, an end-of-session concept log, a Claude tutor and spaced-repetition reviews with a flashcards page.",
+      "category": "productivity"
+    }
+  ]
+}
