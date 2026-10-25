@@ -1,7 +1,7 @@
 # Learn While Build
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.2.0-green.svg)](.claude-plugin/plugin.json)
+[![Version](https://img.shields.io/badge/version-0.2.1-green.svg)](.claude-plugin/plugin.json)
 [![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-orange.svg)](https://code.claude.com/docs/en/plugins)
 
 A Claude Code plugin for people who vibe code and want to understand what
@@ -12,9 +12,10 @@ of a session, then quizzes you on them on a spaced-repetition schedule.
 
 ## How it works
 
-1. **Set up a repo once** with `/learn-mode`. Claude reads the repo and adds
+1. **Set up a repo once** with `/learn-mode`. Claude reads the repo and writes
    teaching rules made for that project (its stack, its concepts, its files) to
-   the repo's `CLAUDE.md`.
+   `.claude/learning.md`. The repo's `CLAUDE.md` only gets a ~6-line pointer,
+   so it doesn't grow; the detail is read only when a stage starts.
 2. **Build as usual.** Claude names the concepts each step uses and leaves a
    small piece for you to write.
 3. **Log at the end of a session** with `/learn-log`. Claude drafts the

@@ -2,7 +2,7 @@
   "name": "learn-while-build",
   "displayName": "Learn While Build",
   "description": "Learn while you vibe code: repo-specific teaching rules, an end-of-session concept log, a Claude tutor that grades you, spaced-repetition reviews and a small flashcards page.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": {
     "name": "Pranav Raut",
     "url": "https://github.com/Pranavraut033"
