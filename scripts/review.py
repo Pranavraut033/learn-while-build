@@ -65,18 +65,26 @@ def add(data, new):
     return data
 
 
+def next_stage(stage, result):
+    if result == "clear":
+        return min(stage + 1, len(STAGES) - 1)
+    if result == "retouch":
+        return max(stage - 1, 0)
+    if result == "unclear":
+        return 0
+    raise ValueError("result must be clear, retouch or unclear")
+
+
+def with_next(c):
+    """Card plus days-until-next-review for each grade, for the buttons."""
+    return {**c, "next": {r: STAGES[next_stage(c["stage"], r)] for r in ("unclear", "retouch", "clear")}}
+
+
 def grade(data, cid, result, by="claude"):
     c = next((c for c in data["concepts"] if c["id"] == cid), None)
     if c is None:
         raise KeyError(f"no concept {cid!r}")
-    if result == "clear":
-        c["stage"] = min(c["stage"] + 1, len(STAGES) - 1)
-    elif result == "retouch":
-        c["stage"] = max(c["stage"] - 1, 0)
-    elif result == "unclear":
-        c["stage"] = 0
-    else:
-        raise ValueError("result must be clear, retouch or unclear")
+    c["stage"] = next_stage(c["stage"], result)
     c["due"] = (today() + dt.timedelta(days=STAGES[c["stage"]])).isoformat()
     c["history"].append({"date": today().isoformat(), "result": result, "by": by})
     return c
@@ -94,7 +102,7 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/":
             self._send(200, (ROOT / "web/cards.html").read_bytes(), "text/html; charset=utf-8")
         elif self.path == "/api/due":
-            self._send(200, due(load()))
+            self._send(200, [with_next(c) for c in due(load())])
         else:
             self._send(404, {"error": "not found"})
 
@@ -145,6 +153,7 @@ def test():
         for _ in range(10):
             grade(data, "a", "clear")
         assert data["concepts"][0]["stage"] == len(STAGES) - 1     # capped
+        assert with_next(data["concepts"][0])["next"] == {"unclear": 1, "retouch": 30, "clear": 60}
         save(data)
         assert load() == data
         today = lambda: dt.date(2026, 6, 1)

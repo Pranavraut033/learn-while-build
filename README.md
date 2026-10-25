@@ -1,7 +1,7 @@
 # Learn While Build
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.1.0-green.svg)](.claude-plugin/plugin.json)
+[![Version](https://img.shields.io/badge/version-0.2.0-green.svg)](.claude-plugin/plugin.json)
 [![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-orange.svg)](https://code.claude.com/docs/en/plugins)
 
 A Claude Code plugin for people who vibe code and want to understand what
@@ -34,7 +34,7 @@ of a session, then quizzes you on them on a spaced-repetition schedule.
 - [Claude Code](https://code.claude.com)
 - `python3` (standard library only, no packages)
 - A browser with internet access for the flashcards page (it loads Alpine.js
-  and Pico.css from a CDN)
+  from a CDN)
 
 ## Install
 
@@ -115,6 +115,25 @@ python3 ~/.claude/plugins/marketplaces/learn-while-build/scripts/review.py serve
 Open http://127.0.0.1:8777. Pass a port to use another one
 (`review.py serve 9000`). The server only listens on 127.0.0.1.
 
+Keyboard: **Space** shows the answer, **1 / 2 / 3** grade Again / Hard / Good.
+Each button shows when the card comes back if you pick it. The page follows
+your system's light or dark mode and works at phone width.
+
+### Design
+
+The page uses its own small set of design tokens, defined at the top of
+[`web/cards.html`](web/cards.html):
+
+| Token group | Choice |
+|---|---|
+| Colours | Warm paper (light) and deep ink (dark), one blue accent, Anki-style red / amber / green for grades |
+| Type | Serif for questions and answers (easy reading), system sans for controls, monospace for file paths and code |
+| Spacing | 4 / 8 / 12 / 16 / 24 / 32 / 48 px scale |
+| Radius | 6 / 10 / 16 px |
+
+Fonts are ones your system already has. Motion is turned off when your
+system asks for reduced motion.
+
 ## Configuration
 
 | Setting | Default | What it does |
@@ -151,7 +170,8 @@ skills/             learn-mode, learn-log, learn-review
 ## Contributing
 
 Issues and pull requests are welcome. Run `python3 scripts/review.py test`
-before opening a PR.
+before opening a PR, and bump `version` in `.claude-plugin/plugin.json`:
+`claude plugin update` only picks up a change when the version changes.
 
 ## License
 

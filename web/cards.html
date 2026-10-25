@@ -4,70 +4,209 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Learn Cards</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2.0.6/css/pico.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
 <style>
-  main { max-width: 40rem; }
-  .meta { font-size: .85rem; opacity: .7; }
-  .answer { white-space: pre-wrap; }
-  .grades { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; }
+/* ---------- Design tokens ----------
+   Calm study page: warm paper (light) / deep ink (dark), one blue accent,
+   Anki-style grade colours. System fonts only, so it works offline except Alpine. */
+:root {
+  --font-read: "Iowan Old Style", "Charter", "Palatino Linotype", Georgia, serif;
+  --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-code: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --text-xs: .75rem; --text-sm: .875rem; --text-md: 1rem;
+  --text-lg: 1.25rem; --text-xl: 1.5rem; --text-2xl: 2rem;
+
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 24px; --space-6: 32px; --space-7: 48px;
+
+  --radius-sm: 6px; --radius-md: 10px; --radius-lg: 16px;
+
+  --bg: #f6f3ee; --surface: #fffdf9; --surface-2: #f1ece4;
+  --ink: #1f1d1a; --ink-muted: #6b665e; --line: #e4ded4;
+  --accent: #2f5d8a; --accent-ink: #ffffff;
+  --again: #b4442f; --hard: #a86b12; --good: #2f7a4f;
+  --shadow: 0 1px 2px rgb(60 50 30 / .06), 0 8px 24px rgb(60 50 30 / .08);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #15171a; --surface: #1d2024; --surface-2: #24282d;
+    --ink: #ece8e1; --ink-muted: #9a948a; --line: #2e3238;
+    --accent: #7fb0e0; --accent-ink: #10202f;
+    --again: #e07a63; --hard: #e0a84a; --good: #6cc08f;
+    --shadow: 0 1px 2px rgb(0 0 0 / .3), 0 8px 24px rgb(0 0 0 / .35);
+    color-scheme: dark;
+  }
+}
+
+/* ---------- Base ---------- */
+* { box-sizing: border-box; }
+body {
+  margin: 0; min-height: 100vh; background: var(--bg); color: var(--ink);
+  font: var(--text-md)/1.5 var(--font-ui); -webkit-font-smoothing: antialiased;
+}
+main { max-width: 42rem; margin: 0 auto; padding: var(--space-7) var(--space-4); }
+code { font: .9em var(--font-code); background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
+[x-cloak] { display: none !important; }
+
+/* ---------- Header + progress ---------- */
+.top { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: var(--space-3); }
+.top h1 { margin: 0; font: 600 var(--text-xl)/1.2 var(--font-read); letter-spacing: -.01em; }
+.count { color: var(--ink-muted); font-size: var(--text-sm); font-variant-numeric: tabular-nums; }
+.bar { height: 4px; background: var(--line); border-radius: 99px; overflow: hidden; margin-bottom: var(--space-6); }
+.bar > div { height: 100%; background: var(--accent); transition: width .3s ease; }
+
+/* ---------- Card ---------- */
+.card {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow); overflow: hidden;
+}
+.card-body { padding: var(--space-6); }
+.meta { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; margin-bottom: var(--space-4); }
+.chip {
+  font-size: var(--text-xs); font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent);
+  padding: 2px var(--space-2); border-radius: 99px;
+}
+.where { font: var(--text-xs) var(--font-code); color: var(--ink-muted); }
+.question { margin: 0; font: 500 var(--text-xl)/1.4 var(--font-read); }
+.answer {
+  margin-top: var(--space-5); padding-top: var(--space-5); border-top: 1px dashed var(--line);
+  font: var(--text-lg)/1.55 var(--font-read); color: var(--ink); white-space: pre-wrap;
+  animation: rise .2s ease;
+}
+.card-foot { padding: var(--space-4) var(--space-6) var(--space-5); background: var(--surface-2); border-top: 1px solid var(--line); }
+
+/* ---------- Buttons ---------- */
+button {
+  font: 600 var(--text-md) var(--font-ui); border: 0; border-radius: var(--radius-md); cursor: pointer;
+  padding: var(--space-3) var(--space-4); transition: transform .08s ease, filter .15s ease;
+}
+button:hover { filter: brightness(1.06); }
+button:active { transform: translateY(1px); }
+button:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 55%, transparent); outline-offset: 2px; }
+button:disabled { opacity: .5; cursor: progress; }
+.reveal { width: 100%; background: var(--accent); color: var(--accent-ink); display: flex; justify-content: center; gap: var(--space-3); }
+.grades { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); }
+.grade {
+  display: grid; gap: 2px; justify-items: center; color: var(--g); background: transparent;
+  border: 1.5px solid color-mix(in srgb, var(--g) 45%, transparent);
+}
+.grade:hover { background: color-mix(in srgb, var(--g) 10%, transparent); filter: none; }
+.grade small { font: 500 var(--text-xs) var(--font-ui); color: var(--ink-muted); }
+.again { --g: var(--again); } .hard { --g: var(--hard); } .good { --g: var(--good); }
+kbd {
+  font: var(--text-xs) var(--font-code); padding: 0 5px; border-radius: 4px;
+  border: 1px solid currentColor; opacity: .7;
+}
+
+/* ---------- States ---------- */
+.empty { text-align: center; padding: var(--space-7) var(--space-5); }
+.empty h2 { margin: 0 0 var(--space-2); font: 600 var(--text-2xl) var(--font-read); }
+.empty p { margin: 0; color: var(--ink-muted); }
+.tally { display: flex; justify-content: center; gap: var(--space-5); margin-top: var(--space-5); font-size: var(--text-sm); }
+.tally b { font-size: var(--text-lg); display: block; }
+.error {
+  margin-bottom: var(--space-4); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md);
+  color: var(--again); background: color-mix(in srgb, var(--again) 10%, transparent);
+}
+.hint { margin-top: var(--space-4); text-align: center; font-size: var(--text-xs); color: var(--ink-muted); }
+
+@keyframes rise { from { opacity: 0; transform: translateY(4px); } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+@media (max-width: 480px) {
+  main { padding-top: var(--space-5); }
+  .card-body { padding: var(--space-5); }
+  .card-foot { padding: var(--space-4); }
+  .question { font-size: var(--text-lg); }
+}
+/* keyboard hints only where there's a keyboard */
+@media (hover: none), (max-width: 480px) { .keys, .hint { display: none; } }
 </style>
 </head>
 <body>
-<main class="container" x-data="cards()" x-init="load()">
-  <hgroup>
-    <h1>Learn cards</h1>
-    <p x-text="loading ? 'Loading…' : cards.length + ' left today'"></p>
-  </hgroup>
+<main x-data="cards()" x-init="load()" @keydown.window="key($event)" x-cloak>
+  <div class="top">
+    <h1>Learn</h1>
+    <span class="count" x-show="!loading && total" x-text="Math.min(done + 1, total) + ' / ' + total"></span>
+  </div>
+  <div class="bar" role="progressbar" :aria-valuenow="done" :aria-valuemax="total">
+    <div :style="`width: ${total ? done / total * 100 : 0}%`"></div>
+  </div>
 
-  <p x-show="error" x-text="error" style="color: var(--pico-del-color)"></p>
+  <p class="error" x-show="error" x-text="error" role="alert"></p>
 
   <template x-if="!loading && card">
-    <article>
-      <header class="meta">
-        <strong x-text="card.name"></strong>
-        <span x-text="' · ' + card.repos.join(', ') + (card.where ? ' · ' + card.where : '')"></span>
-      </header>
-      <p x-text="card.question"></p>
-      <template x-if="shown">
-        <div>
-          <hr>
-          <p class="answer" x-text="card.answer"></p>
+    <article class="card">
+      <div class="card-body">
+        <div class="meta">
+          <span class="chip" x-text="card.name"></span>
+          <span class="where" x-text="card.repos.join(', ') + (card.where ? ' · ' + card.where : '')"></span>
         </div>
-      </template>
-      <footer>
-        <button x-show="!shown" @click="shown = true">Show answer</button>
+        <p class="question" x-html="fmt(card.question)"></p>
+        <div class="answer" x-show="shown" x-html="fmt(card.answer)"></div>
+      </div>
+      <div class="card-foot">
+        <button class="reveal" x-show="!shown" @click="shown = true">Show answer <kbd class="keys">Space</kbd></button>
         <div class="grades" x-show="shown">
-          <button class="secondary" :disabled="busy" @click="grade('unclear')">Again</button>
-          <button class="contrast" :disabled="busy" @click="grade('retouch')">Hard</button>
-          <button :disabled="busy" @click="grade('clear')">Good</button>
+          <template x-for="(g, i) in grades" :key="g.result">
+            <button class="grade" :class="g.cls" :disabled="busy" @click="grade(g.result)">
+              <span x-text="g.label"></span>
+              <small><span x-text="days(card.next[g.result])"></span><span class="keys"> · <kbd x-text="i + 1"></kbd></span></small>
+            </button>
+          </template>
         </div>
-      </footer>
+      </div>
     </article>
   </template>
 
-  <article x-show="!loading && !card && !error">
-    <p>All done for today. 🎉 Next ones come back on schedule.</p>
-  </article>
+  <section class="card empty" x-show="!loading && !card && !error">
+    <h2 x-text="total ? 'Done for today' : 'Nothing due'"></h2>
+    <p x-text="total ? 'Cards come back on schedule.' : 'Log concepts with /learn-log, then check back tomorrow.'"></p>
+    <div class="tally" x-show="total">
+      <span style="color: var(--again)"><b x-text="tally.unclear"></b>Again</span>
+      <span style="color: var(--hard)"><b x-text="tally.retouch"></b>Hard</span>
+      <span style="color: var(--good)"><b x-text="tally.clear"></b>Good</span>
+    </div>
+  </section>
+
+  <p class="hint" x-show="card">Space to reveal · 1 / 2 / 3 to grade</p>
 </main>
 <script>
   function cards() {
     return {
-      cards: [], shown: false, loading: true, busy: false, error: "",
+      cards: [], total: 0, done: 0, shown: false, loading: true, busy: false, error: "",
+      tally: { unclear: 0, retouch: 0, clear: 0 },
+      grades: [
+        { result: "unclear", label: "Again", cls: "again" },
+        { result: "retouch", label: "Hard", cls: "hard" },
+        { result: "clear", label: "Good", cls: "good" },
+      ],
       get card() { return this.cards[0]; },
       async load() {
-        try { this.cards = await (await fetch("/api/due")).json(); }
+        try { this.cards = await (await fetch("/api/due")).json(); this.total = this.cards.length; }
         catch (e) { this.error = "Could not load cards. Is review.py serve running?"; }
         this.loading = false;
       },
+      days(n) { return n === 1 ? "1 day" : n + " days"; },
+      // escape, then render `inline code`
+      fmt(s) {
+        const esc = String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+        return esc.replace(/`([^`]+)`/g, "<code>$1</code>");
+      },
+      key(e) {
+        if (!this.card || this.busy || e.metaKey || e.ctrlKey) return;
+        if (!this.shown && (e.key === " " || e.key === "Enter")) { e.preventDefault(); this.shown = true; }
+        else if (this.shown && "123".includes(e.key)) this.grade(this.grades[e.key - 1].result);
+      },
       async grade(result) {
-        this.busy = true;
+        this.busy = true; this.error = "";
         try {
-          const r = await fetch("/api/grade", { method: "POST",
-            body: JSON.stringify({ id: this.card.id, result }) });
+          const r = await fetch("/api/grade", { method: "POST", body: JSON.stringify({ id: this.card.id, result }) });
           if (!r.ok) throw new Error((await r.json()).error);
-          this.cards.shift();
-          this.shown = false;
+          this.tally[result]++; this.done++;
+          this.cards.shift(); this.shown = false;
         } catch (e) { this.error = "Save failed: " + e.message; }
         this.busy = false;
       },
